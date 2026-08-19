@@ -31,3 +31,6 @@ Thumbs.db
 coverage/
 playwright-report/
 test-results/
+
+# Legacy plan docs (reference only, do not commit)
+docs/legacy*
