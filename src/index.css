@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+ * TaleOrience design tokens
+ * Single source of truth for the neutral light palette (UI_DESCRIPTION §36).
+ * All components must reference these tokens via var(--color-*) or the
+ * generated Tailwind utilities. No hard-coded hex values in components.
+ * ------------------------------------------------------------------------- */
+@theme static {
+  /* Core surfaces */
+  --color-app-bar: #111111;
+  --color-app-bar-hover: #1b1b1b;
+  --color-app-bar-active: #242424;
+
+  --color-page: #ffffff;
+  --color-surface: #f7f7f7;
+  --color-surface-alt: #f1f2f3;
+  --color-surface-hover: #e9ebed;
+  --color-surface-selected: #dde2e6;
+
+  /* Borders */
+  --color-border: #d9dcdd;
+  --color-border-subtle: #e7e8e9;
+
+  /* Text */
+  --color-text: #202124;
+  --color-text-secondary: #666a6d;
+  --color-text-muted: #92969a;
+  --color-text-disabled: #b5b8ba;
+
+  --color-text-on-dark: #f5f5f5;
+  --color-text-on-dark-muted: #a8a8a8;
+
+  /* Icons */
+  --color-icon: #666a6d;
+  --color-icon-muted: #9a9da0;
+
+  /* Semantic */
+  --color-primary: #4a78a8;
+  --color-primary-hover: #3f6894;
+  --color-primary-soft: #eaf2fa;
+
+  --color-info: #4a86c5;
+  --color-info-soft: #e8f2fc;
+
+  --color-success: #4e8a63;
+  --color-success-soft: #eaf4ed;
+
+  --color-warning: #b5833e;
+  --color-warning-soft: #fbf3e5;
+
+  --color-danger: #b85a5a;
+  --color-danger-soft: #fbecEC;
+
+  /* Secret/private content */
+  --color-secret: #8d4fa3;
+  --color-secret-soft: #faf0fc;
+  --color-secret-border: #c98dd8;
+
+  /* Informational callout */
+  --color-callout-info: #4a86c5;
+  --color-callout-info-soft: #eaf3fd;
+  --color-callout-info-border: #c9ddf2;
+
+  /* Tags */
+  --color-tag-background: #f0f1f2;
+  --color-tag-border: #e0e2e3;
+  --color-tag-text: #55595c;
+  --color-tag-remove: #7c8083;
+
+  /* Selection / hover / focus */
+  --color-selection: #dde2e6;
+  --color-hover: #e9ebed;
+  --color-focus: #c7d9ea;
+
+  /* Radius */
+  --radius-small: 4px;
+  --radius-medium: 6px;
+  --radius-large: 8px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-popover: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  /* Fonts */
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, monospace;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-page text-text font-sans antialiased;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-text);
+    background: var(--color-page);
+  }
+
+  ::selection {
+    background: var(--color-focus);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 1px;
+  }
+
+  button {
+    cursor: pointer;
+  }
+}
