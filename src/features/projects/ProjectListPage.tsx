@@ -1,89 +1,113 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 
 import {
   BookOpenText,
   Boxes,
+  Ellipsis,
   LayoutGrid,
+  Pencil,
   Plus,
   Sparkles,
   Trash2,
 } from "lucide-react";
 
-import { useCreateProject, useDeleteProject, useProjects } from "@/api/hooks";
+import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } from "@/api/hooks";
+import { assetContentUrl } from "@/api/endpoints";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, IconButton } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ContextMenu, type MenuItemDef } from "@/components/ui/ContextMenu";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
+import { absoluteDate, timeAgo } from "@/lib/time";
 import { cn } from "@/lib/cn";
 import type { Project } from "@/api/types";
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 interface ProjectCardProps {
   project: Project;
   onOpen: (id: string) => void;
+  onEdit: (project: Project) => void;
   onDelete: (project: Project) => void;
 }
 
-function ProjectCard({ project, onOpen, onDelete }: ProjectCardProps) {
+function ProjectCard({ project, onOpen, onEdit, onDelete }: ProjectCardProps) {
+  const menuItems: MenuItemDef[] = [
+    {
+      type: "item",
+      label: "Rename",
+      icon: <Pencil className="h-4 w-4" />,
+      onSelect: () => onEdit(project),
+    },
+    { type: "separator" },
+    {
+      type: "item",
+      label: "Delete",
+      icon: <Trash2 className="h-4 w-4" />,
+      danger: true,
+      onSelect: () => onDelete(project),
+    },
+  ];
+
+  const banner = project.bannerAssetId ? (
+    <img
+      src={assetContentUrl(project.id, project.bannerAssetId)}
+      alt=""
+      className="aspect-square w-full object-cover"
+    />
+  ) : null;
+
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(project.id)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") onOpen(project.id);
-      }}
-      className={cn(
-        "group relative flex flex-col gap-3 rounded-large border border-border bg-surface p-4",
-        "transition-all hover:border-primary hover:shadow-popover",
-        "focus-visible:outline-2 focus-visible:outline-focus",
-      )}
-      data-testid="project-card"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-medium bg-primary-soft text-primary">
-          <BookOpenText className="h-5 w-5" />
-        </div>
-        {project.isExample && <Badge variant="primary">Example</Badge>}
-      </div>
-
-      <div className="min-w-0">
-        <h2 className="truncate text-base font-semibold text-text">{project.name}</h2>
-        <p className="mt-0.5 line-clamp-2 min-h-[2.5rem] text-sm text-text-secondary">
-          {project.description || "No description"}
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-text-muted">
-        <span>Updated {formatDate(project.updatedAt)}</span>
-        {project.isReadOnly ? (
-          <Badge variant="neutral">Read-only</Badge>
-        ) : (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={`Delete ${project.name}`}
-            className="text-icon-muted opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(project);
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+    <ContextMenu items={menuItems}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpen(project.id)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onOpen(project.id);
+        }}
+        className={cn(
+          "group relative flex flex-col overflow-hidden rounded-large border border-border bg-surface text-left",
+          "transition-all hover:border-primary hover:shadow-popover",
+          "focus-visible:outline-2 focus-visible:outline-focus",
         )}
+        data-testid="project-card"
+      >
+        {banner ?? (
+          <div className="flex aspect-square w-full items-center justify-center bg-primary-soft text-primary">
+            <BookOpenText className="h-10 w-10" />
+          </div>
+        )}
+
+        <div className="flex min-w-0 flex-1 flex-col gap-1 p-3">
+          <h2 className="truncate text-sm font-semibold text-text">{project.name}</h2>
+          <p className="line-clamp-2 min-h-[2rem] text-xs text-text-secondary">
+            {project.description || "No description"}
+          </p>
+
+          <div className="mt-auto flex items-center justify-between gap-1 pt-2 text-xs text-text-muted">
+            <span title={absoluteDate(project.updatedAt)}>Updated {timeAgo(project.updatedAt)}</span>
+            {project.isExample && <Badge variant="primary">Example</Badge>}
+            {project.isReadOnly ? (
+              <Badge variant="neutral">Read-only</Badge>
+            ) : (
+              <ContextMenu items={menuItems}>
+                <IconButton
+                  size="icon"
+                  aria-label={`Options for ${project.name}`}
+                  className="h-6 w-6 text-icon-muted opacity-0 transition-opacity group-hover:opacity-100"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Ellipsis className="h-3.5 w-3.5" />
+                </IconButton>
+              </ContextMenu>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </ContextMenu>
   );
 }
 
@@ -142,17 +166,97 @@ function NewProjectForm({ onCreated }: NewProjectFormProps) {
   );
 }
 
+function ProjectEditDialog({
+  project,
+  onClose,
+}: {
+  project: Project | null;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const updateProject = useUpdateProject();
+
+  useEffect(() => {
+    if (!project) return;
+    setName(project.name);
+    setDescription(project.description ?? "");
+  }, [project]);
+
+  if (!project) return null;
+
+  const save = () => {
+    // TODO(backend): needs `PATCH /projects/:projectId` — see backend-should-implement.md.
+    updateProject.mutate(
+      {
+        projectId: project.id,
+        input: { name: name.trim(), description: description.trim() || null },
+      },
+      { onSuccess: () => onClose() },
+    );
+  };
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit project"
+        className="w-full max-w-sm rounded-large border border-border bg-page p-5 shadow-popover animate-popover-in"
+      >
+        <h2 className="text-base font-semibold text-text">Edit project</h2>
+        <div className="mt-4 flex flex-col gap-3">
+          <Input
+            autoFocus
+            placeholder="World name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-label="Project name"
+          />
+          <Input
+            placeholder="Short description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            aria-label="Project description"
+          />
+        </div>
+        {updateProject.isError && (
+          <p className="mt-2 text-xs text-danger" role="alert">
+            Could not save the project.
+          </p>
+        )}
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={save} disabled={!name.trim() || updateProject.isPending}>
+            {updateProject.isPending && <Spinner className="h-4 w-4" />}
+            Save
+          </Button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function ProjectListPage() {
   const navigate = useNavigate();
   const { data: projects, isLoading, isError } = useProjects();
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState<Project | null>(null);
+  const [toEdit, setToEdit] = useState<Project | null>(null);
   const deleteMutation = useDeleteProject();
 
   const openProject = (id: string) => navigate(`/projects/${id}`);
 
   return (
-    <main className="min-h-screen bg-surface">
+    <main className="min-h-screen bg-page">
       <header className="border-b border-border bg-page px-8 py-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-medium bg-app-bar text-text-on-dark">
@@ -196,6 +300,7 @@ export function ProjectListPage() {
                 key={project.id}
                 project={project}
                 onOpen={openProject}
+                onEdit={setToEdit}
                 onDelete={setToDelete}
               />
             ))}
@@ -216,6 +321,8 @@ export function ProjectListPage() {
           />
         )}
       </div>
+
+      <ProjectEditDialog project={toEdit} onClose={() => setToEdit(null)} />
 
       <ConfirmDialog
         open={Boolean(toDelete)}
