@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 
-import { ArrowLeft, ArrowRight, Boxes, Check, ChevronDown, House, PanelLeft, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, Boxes, Check, ChevronDown, House, PanelLeft, PanelRight, Search } from "lucide-react";
 
 import { useProject, useProjects } from "@/api/hooks";
 import { IconButton } from "@/components/ui/Button";
@@ -20,6 +20,8 @@ export function AppTopBar({ onOpenSearch }: AppTopBarProps) {
   const { data: projects } = useProjects();
   const leftSidebarOpen = useUiStore((s) => s.leftSidebarOpen);
   const toggleLeftSidebar = useUiStore((s) => s.toggleLeftSidebar);
+  const rightSidebarOpen = useUiStore((s) => s.rightSidebarOpen);
+  const toggleRightSidebar = useUiStore((s) => s.toggleRightSidebar);
 
   // React Router v7 stores the current index in history.state.idx.
   const historyState = window.history.state as { idx?: number } | null;
@@ -102,6 +104,15 @@ export function AppTopBar({ onOpenSearch }: AppTopBarProps) {
             onClick={toggleLeftSidebar}
           >
             <PanelLeft className="h-[18px] w-[18px]" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip label={rightSidebarOpen ? "Hide inspector" : "Show inspector"}>
+          <IconButton
+            variant="dark"
+            aria-label={rightSidebarOpen ? "Hide inspector" : "Show inspector"}
+            onClick={toggleRightSidebar}
+          >
+            <PanelRight className="h-[18px] w-[18px]" />
           </IconButton>
         </Tooltip>
         <Tooltip label="Back">

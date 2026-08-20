@@ -3,21 +3,55 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { CircleHelp, FolderPlus, LayoutTemplate, Lightbulb, Settings, Boxes } from "lucide-react";
 
-import { useCreateGameObject } from "@/api/hooks";
+import { useCreateGameObject, useProject } from "@/api/hooks";
 import { IconButton } from "@/components/ui/Button";
 import { NameDialog } from "@/components/ui/NameDialog";
+import { useRipple } from "@/components/ui/Ripple";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useUiStore, type SidebarMode } from "@/stores/uiStore";
 import { cn } from "@/lib/cn";
 import { ProjectBrowser } from "@/features/tree/ProjectBrowser";
 import { TemplatesPanel } from "@/features/templates/TemplatesPanel";
 import { AssetsBrowser } from "@/features/assets/AssetsBrowser";
+import { SettingsDialog } from "@/features/projects/SettingsDialog";
 
 const TABS: Array<{ mode: SidebarMode; label: string; icon: React.ReactNode }> = [
   { mode: "project", label: "Project", icon: <Boxes className="h-4 w-4" /> },
   { mode: "templates", label: "Templates", icon: <LayoutTemplate className="h-4 w-4" /> },
   { mode: "assets", label: "Assets", icon: <Boxes className="h-4 w-4" /> },
 ];
+
+/** Sidebar mode tab: icon-only when inactive, icon + label when active. */
+function ModeTab({
+  tab,
+  active,
+  onClick,
+}: {
+  tab: (typeof TABS)[number];
+  active: boolean;
+  onClick: () => void;
+}) {
+  const ripple = useRipple<HTMLButtonElement>();
+  return (
+    <button
+      ref={ripple.ref}
+      onPointerDown={ripple.onPointerDown}
+      onClick={onClick}
+      aria-selected={active}
+      aria-label={tab.label}
+      title={active ? undefined : tab.label}
+      className={cn(
+        "flex flex-1 items-center justify-center gap-1.5 rounded-medium px-2 py-1.5 text-sm",
+        active
+          ? "bg-surface-selected font-semibold text-text"
+          : "text-text-secondary hover:bg-surface-hover hover:text-text",
+      )}
+    >
+      {tab.icon}
+      {active && <span>{tab.label}</span>}
+    </button>
+  );
+}
 
 function CreateObjectButton() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -58,6 +92,8 @@ export function LeftSidebar() {
   const setMode = useUiStore((s) => s.setSidebarMode);
   const leftSidebarOpen = useUiStore((s) => s.leftSidebarOpen);
   const { projectId } = useParams<{ projectId: string }>();
+  const { data: project } = useProject(projectId);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (!leftSidebarOpen) return null;
 
@@ -66,20 +102,7 @@ export function LeftSidebar() {
       {/* Mode tabs */}
       <div className="flex items-center gap-1 border-b border-border-subtle px-2 py-2">
         {TABS.map((tab) => (
-          <button
-            key={tab.mode}
-            onClick={() => setMode(tab.mode)}
-            aria-selected={mode === tab.mode}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-medium px-2 py-1.5 text-sm",
-              mode === tab.mode
-                ? "bg-surface-selected font-semibold text-text"
-                : "text-text-secondary hover:bg-surface-hover hover:text-text",
-            )}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
+          <ModeTab key={tab.mode} tab={tab} active={mode === tab.mode} onClick={() => setMode(tab.mode)} />
         ))}
       </div>
 
@@ -99,7 +122,12 @@ export function LeftSidebar() {
             </IconButton>
           </Tooltip>
           <Tooltip label="Settings">
-            <IconButton size="icon" aria-label="Settings" className="h-6 w-6">
+            <IconButton
+              size="icon"
+              aria-label="Settings"
+              className="h-6 w-6"
+              onClick={() => setSettingsOpen(true)}
+            >
               <Settings className="h-4 w-4" />
             </IconButton>
           </Tooltip>
@@ -111,6 +139,8 @@ export function LeftSidebar() {
         </div>
         {mode === "project" && projectId && <CreateObjectButton />}
       </div>
+
+      <SettingsDialog open={settingsOpen} project={project} onClose={() => setSettingsOpen(false)} />
     </aside>
   );
 }
