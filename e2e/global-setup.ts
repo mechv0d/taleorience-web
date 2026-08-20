@@ -1,4 +1,4 @@
-import { request } from "@playwright/test";
+import { APIRequestContext, request } from "@playwright/test";
 
 const API = "http://localhost:4000";
 const PROJECTS_PATH = "/api/v1/projects";
@@ -15,6 +15,14 @@ interface GameObject {
   name: string;
   parentId: string | null;
   children?: GameObject[];
+}
+
+async function readTree(api: APIRequestContext, projectId: string): Promise<GameObject[]> {
+  const res = await api.get(`${PROJECTS_PATH}/${projectId}/game-objects/tree`);
+  if (!res.ok()) {
+    throw new Error(`Failed to read the project tree in global setup: ${res.status()}`);
+  }
+  return (await res.json()) as GameObject[];
 }
 
 /**
@@ -45,16 +53,24 @@ export default async function globalSetup(): Promise<void> {
     projectId = project.id;
   }
 
-  // Ensure the project has a child object so tree navigation can be tested.
-  const treeRes = await api.get(`${PROJECTS_PATH}/${projectId}/game-objects/tree`);
-  if (!treeRes.ok()) {
-    throw new Error(`Failed to read the project tree in global setup: ${treeRes.status()}`);
-  }
-  const tree = (await treeRes.json()) as GameObject[];
-  const root = tree[0];
-  const hasChild = root?.children?.some((child) => child.name === CHILD_NAME);
+  // The backend creates no objects on project creation, so seed a root
+  // GameObject (auto-creates its "Main" page) and one child under it so the
+  // tree and navigation tests can assert against a known hierarchy.
+  let tree = await readTree(api, projectId);
+  let root = tree[0];
 
-  if (root && !hasChild) {
+  if (!root) {
+    const created = await api.post(`${PROJECTS_PATH}/${projectId}/game-objects`, {
+      data: { name: PROJECT_NAME, parentId: null },
+    });
+    if (!created.ok()) {
+      throw new Error(`Failed to seed root object "${PROJECT_NAME}": ${created.status()}`);
+    }
+    tree = await readTree(api, projectId);
+    root = tree[0];
+  }
+
+  if (root && !root.children?.some((child) => child.name === CHILD_NAME)) {
     const created = await api.post(`${PROJECTS_PATH}/${projectId}/game-objects`, {
       data: { name: CHILD_NAME, parentId: root.id },
     });
