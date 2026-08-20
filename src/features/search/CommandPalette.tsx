@@ -5,9 +5,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FileText, Search, Sparkles, Type, Boxes } from "lucide-react";
 
 import { listGameObjects, getPages } from "@/api/endpoints";
-import { useProjectSearch } from "@/api/hooks";
+import { useGameObjectTree, useProjectSearch } from "@/api/hooks";
 import { Spinner } from "@/components/ui/Spinner";
 import { useUiStore } from "@/stores/uiStore";
+import { flattenTree } from "@/lib/tree";
 import { cn } from "@/lib/cn";
 import type { SearchResult } from "@/api/types";
 
@@ -19,20 +20,32 @@ const GROUP_META: Record<SearchResult["entityType"], { label: string; icon: Reac
   block: { label: "Content", icon: <Type className="h-3.5 w-3.5" /> },
 };
 
-const pageOwnerCache = new Map<string, Map<string, string>>();
+interface PageIndex {
+  ownerOf: Map<string, string>;
+  titleOf: Map<string, string>;
+}
 
-async function resolveOwner(projectId: string, pageId: string): Promise<string | null> {
-  let map = pageOwnerCache.get(projectId);
-  if (!map) {
-    map = new Map();
-    const objects = await listGameObjects(projectId);
-    for (const object of objects) {
-      const pages = await getPages(projectId, object.id);
-      for (const page of pages) map.set(page.id, object.id);
-    }
-    pageOwnerCache.set(projectId, map);
+const pageIndexCache = new Map<string, Promise<PageIndex>>();
+
+async function loadPageIndex(projectId: string): Promise<PageIndex> {
+  let cached = pageIndexCache.get(projectId);
+  if (!cached) {
+    cached = (async () => {
+      const ownerOf = new Map<string, string>();
+      const titleOf = new Map<string, string>();
+      const objects = await listGameObjects(projectId);
+      for (const object of objects) {
+        const pages = await getPages(projectId, object.id);
+        for (const page of pages) {
+          ownerOf.set(page.id, object.id);
+          titleOf.set(page.id, page.title);
+        }
+      }
+      return { ownerOf, titleOf };
+    })();
+    pageIndexCache.set(projectId, cached);
   }
-  return map.get(pageId) ?? null;
+  return cached;
 }
 
 export function CommandPalette() {
@@ -40,26 +53,79 @@ export function CommandPalette() {
   const setOpen = useUiStore((s) => s.setSearchPaletteOpen);
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
+  const { data: tree } = useGameObjectTree(projectId);
 
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [pageIndex, setPageIndex] = useState<PageIndex | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const trimmed = query.trim();
   const { data, isFetching, isError } = useProjectSearch(projectId, trimmed, open);
 
+  // Load the local name/title index (GO names come from the tree instead).
+  useEffect(() => {
+    if (!open || !projectId) return;
+    let cancelled = false;
+    void loadPageIndex(projectId).then((index) => {
+      if (!cancelled) setPageIndex(index);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, projectId]);
+
+  // Client-side augmentation: the backend search indexes block content; GO names
+  // and page titles are matched here so the palette always finds them by name.
+  const results = useMemo<SearchResult[]>(() => {
+    const server = data ?? [];
+    if (!trimmed) return server;
+    const tq = trimmed.toLowerCase();
+
+    const extra: SearchResult[] = [];
+    const knownGoIds = new Set(server.filter((r) => r.entityType === "gameObject").map((r) => r.entityId));
+    for (const node of flattenTree(tree ?? [])) {
+      if (!knownGoIds.has(node.id) && node.name.toLowerCase().includes(tq)) {
+        extra.push({
+          id: `go:${node.id}`,
+          projectId: projectId ?? "",
+          entityType: "gameObject",
+          entityId: node.id,
+          text: node.name,
+        });
+      }
+    }
+
+    if (pageIndex) {
+      const knownPageIds = new Set(server.filter((r) => r.entityType === "page").map((r) => r.entityId));
+      for (const [pageId, title] of pageIndex.titleOf) {
+        if (!knownPageIds.has(pageId) && title.toLowerCase().includes(tq)) {
+          extra.push({
+            id: `page:${pageId}`,
+            projectId: projectId ?? "",
+            entityType: "page",
+            entityId: pageId,
+            text: title,
+          });
+        }
+      }
+    }
+
+    return [...server, ...extra];
+  }, [data, trimmed, tree, pageIndex, projectId]);
+
   const groups = useMemo<Grouped[]>(() => {
-    if (!data) return [];
+    if (!results.length) return [];
     const order: SearchResult["entityType"][] = ["gameObject", "page", "block"];
     return order
       .map((entityType) => ({
         key: entityType,
         label: GROUP_META[entityType].label,
         icon: GROUP_META[entityType].icon,
-        results: data.filter((r) => r.entityType === entityType),
+        results: results.filter((r) => r.entityType === entityType),
       }))
       .filter((g) => g.results.length > 0);
-  }, [data]);
+  }, [results]);
 
   const flat = useMemo(() => groups.flatMap((g) => g.results), [groups]);
 
@@ -67,6 +133,7 @@ export function CommandPalette() {
     if (!open) return;
     setQuery("");
     setActiveIndex(0);
+    setPageIndex(null);
     const timer = window.setTimeout(() => inputRef.current?.focus(), 0);
     return () => window.clearTimeout(timer);
   }, [open]);
@@ -89,7 +156,8 @@ export function CommandPalette() {
       navigate(`/projects/${projectId}/game-objects/${result.entityId}`);
       return;
     }
-    const ownerId = await resolveOwner(projectId, result.entityId);
+    const index = await loadPageIndex(projectId);
+    const ownerId = index.ownerOf.get(result.entityId);
     if (ownerId) {
       navigate(`/projects/${projectId}/game-objects/${ownerId}`);
     }
