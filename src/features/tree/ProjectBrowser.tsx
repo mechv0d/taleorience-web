@@ -48,15 +48,17 @@ export function ProjectBrowser() {
   return (
     <div className="flex h-full flex-col">
       <div className="px-3 pb-2 pt-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-icon-muted" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Find by name or #tag"
-            aria-label="Find by name or #tag"
-            className="h-8 w-full rounded-small border border-border bg-page pl-8 pr-8 text-sm text-text placeholder:text-text-muted focus:border-focus focus:outline-none"
-          />
+        <div className="flex items-center gap-1">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-icon-muted" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Find by name or #tag"
+              aria-label="Find by name or #tag"
+              className="h-8 w-full rounded-small border border-border bg-page pl-8 pr-8 text-sm text-text placeholder:text-text-muted focus:border-focus focus:outline-none"
+            />
+          </div>
           <Popover
             align="end"
             label="Filters"
@@ -65,7 +67,7 @@ export function ProjectBrowser() {
                 size="icon"
                 aria-label="Filters"
                 aria-expanded={open}
-                className="absolute right-1.5 top-1/2 h-6 w-6 -translate-y-1/2"
+                className="h-6 w-6"
                 onClick={toggle}
               >
                 <Filter className="h-3.5 w-3.5" />
