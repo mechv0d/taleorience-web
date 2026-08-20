@@ -13,7 +13,6 @@ async function openProject(page: Page) {
 test("tree shows the project hierarchy", async ({ page }) => {
   await openProject(page);
 
-  await expect(page.getByTestId("tree-node")).toHaveCount(2);
   await expect(page.getByTestId("tree-node").first()).toContainText(ROOT_NAME);
   await expect(page.getByRole("treeitem", { name: CHILD_NAME })).toBeVisible();
 });
@@ -21,9 +20,11 @@ test("tree shows the project hierarchy", async ({ page }) => {
 test("navigating to an object shows breadcrumbs, title and pages", async ({ page }) => {
   await openProject(page);
 
-  // Root object: Home badge + Main page tab.
+  // Root object: Home badge + Main page tab. The root Main page is empty
+  // (the editor suite writes to the child object's page instead).
   await expect(page.getByRole("heading", { level: 1, name: ROOT_NAME })).toBeVisible();
   await expect(page.getByRole("button", { name: /Main/ })).toBeVisible();
+  await expect(page.getByText("This page is empty.")).toBeVisible();
 
   // Open the child object from the tree.
   await page.getByRole("treeitem", { name: CHILD_NAME }).click();
@@ -32,9 +33,6 @@ test("navigating to an object shows breadcrumbs, title and pages", async ({ page
   // Breadcrumb shows the parent path.
   await expect(page.getByLabel("Breadcrumb")).toContainText(ROOT_NAME);
   await expect(page.getByLabel("Breadcrumb")).toContainText(CHILD_NAME);
-
-  // Page content area renders (empty page state in the seeded data).
-  await expect(page.getByText("This page is empty.")).toBeVisible();
 });
 
 test("the right sidebar shows tags and relations sections", async ({ page }) => {

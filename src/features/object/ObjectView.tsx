@@ -1,15 +1,18 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { ChevronRight, House } from "lucide-react";
+import { ChevronRight, House, Pencil, Check } from "lucide-react";
 
 import { useBlocks, useGameObjectTree, usePages } from "@/api/hooks";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { ancestorPath, findNode } from "@/lib/tree";
 import { cn } from "@/lib/cn";
 import { objectIcon } from "@/features/tree/objectIcons";
 import { BlockRenderer } from "@/features/editor/BlockRenderer";
+import { PageEditor } from "@/features/editor/PageEditor";
+import { useSaveStore } from "@/features/editor/saveStore";
 import type { Page } from "@/api/types";
 
 export function ObjectView() {
@@ -18,6 +21,9 @@ export function ObjectView() {
   const { data: pages, isLoading: pagesLoading } = usePages(projectId, gameObjectId);
 
   const [activePageId, setActivePageId] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const savePending = useSaveStore((s) => s.pending);
+  const lastSavedAt = useSaveStore((s) => s.lastSavedAt);
 
   const node = useMemo(() => findNode(tree ?? [], gameObjectId ?? ""), [tree, gameObjectId]);
   const path = useMemo(() => ancestorPath(tree ?? [], gameObjectId ?? ""), [tree, gameObjectId]);
@@ -92,25 +98,47 @@ export function ObjectView() {
           </div>
         ) : pages && pages.length > 0 ? (
           <>
-            <div className="mt-6 flex items-center gap-1 border-b border-border">
-              {pages.map((page) => (
-                <button
-                  key={page.id}
-                  onClick={() => setActivePageId(page.id)}
-                  aria-selected={page.id === activePage?.id}
-                  className={cn(
-                    "-mb-px border-b-2 px-3 py-2 text-sm",
-                    page.id === activePage?.id
-                      ? "border-primary font-semibold text-text"
-                      : "border-transparent text-text-secondary hover:text-text",
-                  )}
+            <div className="mt-6 flex items-end justify-between gap-4">
+              <div className="flex items-center gap-1 border-b border-border">
+                {pages.map((page) => (
+                  <button
+                    key={page.id}
+                    onClick={() => setActivePageId(page.id)}
+                    aria-selected={page.id === activePage?.id}
+                    className={cn(
+                      "-mb-px border-b-2 px-3 py-2 text-sm",
+                      page.id === activePage?.id
+                        ? "border-primary font-semibold text-text"
+                        : "border-transparent text-text-secondary hover:text-text",
+                    )}
+                  >
+                    {page.title}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-3 pb-1.5">
+                {editing && (
+                  <span data-testid="save-status" className="text-xs text-text-muted">
+                    {savePending > 0 ? "Saving…" : lastSavedAt ? "Saved" : "Edit mode"}
+                  </span>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setEditing((v) => !v)}
+                  data-testid="edit-toggle"
+                  leadingIcon={editing ? <Check className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
                 >
-                  {page.title}
-                </button>
-              ))}
+                  {editing ? "Done" : "Edit"}
+                </Button>
+              </div>
             </div>
 
-            <PageBlocks key={activePage?.id} pageId={activePage?.id} projectId={projectId} />
+            {editing && activePage ? (
+              <PageEditor key={activePage.id} projectId={projectId} pageId={activePage.id} />
+            ) : (
+              <PageBlocks key={activePage?.id} pageId={activePage?.id} projectId={projectId} />
+            )}
           </>
         ) : (
           <p className="mt-8 text-sm text-text-muted">This object has no pages yet.</p>
