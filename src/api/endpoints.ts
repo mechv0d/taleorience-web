@@ -19,6 +19,10 @@ import type {
  * Typed API endpoints. Every URL here exists in docs/API.md — do not invent endpoints.
  * Note: the backend contract evolves (v0.4.0+); new read endpoints (game-objects list/tree)
  * are already part of the contract.
+ *
+ * The "Pending backend" section below is the ONLY exception: those endpoints are proposed
+ * contract extensions (see backend-should-implement.md). The frontend treats them as not yet
+ * available — callers must handle failure gracefully. Do NOT enable them silently.
  */
 
 /* ------------------------------- Projects ------------------------------- */
@@ -53,6 +57,67 @@ export const deleteGameObject = (projectId: string, gameObjectId: string) =>
 
 export const getPages = (projectId: string, gameObjectId: string) =>
   api.request<Page[]>(`/projects/${projectId}/game-objects/${gameObjectId}/pages`);
+
+/* ----------------- Pending backend (see backend-should-implement.md) ----------------- */
+
+// TODO(backend): implement `PATCH /projects/:projectId` (name/description/bannerAssetId).
+export const updateProject = (projectId: string, input: { name?: string; description?: string | null; bannerAssetId?: string | null }) =>
+  api.request<Project>(`/projects/${projectId}`, { method: "PATCH", body: input });
+
+// TODO(backend): implement `POST /game-objects/:goId/update` (name/icon/bannerAssetId).
+export const updateGameObject = (
+  projectId: string,
+  gameObjectId: string,
+  input: { name?: string; icon?: string | null; bannerAssetId?: string | null },
+) =>
+  api.request<GameObject>(`/projects/${projectId}/game-objects/${gameObjectId}/update`, {
+    method: "POST",
+    body: input,
+  });
+
+// TODO(backend): implement `POST /game-objects/:goId/move` (parentId/toIndex).
+export const moveGameObject = (
+  projectId: string,
+  gameObjectId: string,
+  input: { parentId?: string | null; toIndex: number },
+) =>
+  api.request<GameObject[]>(`/projects/${projectId}/game-objects/${gameObjectId}/move`, {
+    method: "POST",
+    body: input,
+  });
+
+// TODO(backend): implement `POST /game-objects/:goId/pages` (title).
+export const createPage = (projectId: string, gameObjectId: string, input: { title: string }) =>
+  api.request<Page>(`/projects/${projectId}/game-objects/${gameObjectId}/pages`, {
+    method: "POST",
+    body: input,
+  });
+
+// TODO(backend): implement `POST /game-objects/:goId/pages/:pageId/update` (title).
+export const updatePage = (
+  projectId: string,
+  gameObjectId: string,
+  pageId: string,
+  input: { title: string },
+) =>
+  api.request<Page>(`/projects/${projectId}/game-objects/${gameObjectId}/pages/${pageId}/update`, {
+    method: "POST",
+    body: input,
+  });
+
+// TODO(backend): implement `POST /game-objects/:goId/pages/:pageId/delete`.
+export const deletePage = (projectId: string, gameObjectId: string, pageId: string) =>
+  api.request<SuccessResponse>(
+    `/projects/${projectId}/game-objects/${gameObjectId}/pages/${pageId}/delete`,
+    { method: "POST" },
+  );
+
+// TODO(backend): implement `POST /game-objects/:goId/pages/:pageId/move` (toIndex).
+export const movePage = (projectId: string, gameObjectId: string, pageId: string, toIndex: number) =>
+  api.request<Page[]>(`/projects/${projectId}/game-objects/${gameObjectId}/pages/${pageId}/move`, {
+    method: "POST",
+    body: { toIndex },
+  });
 
 /* -------------------------------- Blocks -------------------------------- */
 

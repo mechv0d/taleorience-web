@@ -11,6 +11,7 @@ import {
   createAssetFolder,
   createBlock,
   createGameObject,
+  createPage,
   createProject,
   createRelation,
   createTag,
@@ -18,6 +19,7 @@ import {
   deleteAssetFolder,
   deleteBlock,
   deleteGameObject,
+  deletePage,
   deleteProject,
   deleteRelation,
   deleteTag,
@@ -33,10 +35,15 @@ import {
   listRelations,
   listTags,
   moveBlock,
+  moveGameObject,
+  movePage,
   removeTagFromGameObject,
   resolveReferences,
   searchProject,
   updateBlock,
+  updateGameObject,
+  updatePage,
+  updateProject,
   uploadAsset,
 } from "./endpoints";
 import { queryKeys } from "./queryKeys";
@@ -69,6 +76,127 @@ export function useDeleteProject(): UseMutationResult<unknown, Error, string> {
   return useMutation({
     mutationFn: deleteProject,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
+  });
+}
+
+/* --------------- Pending backend (see backend-should-implement.md) ---------------- */
+
+// TODO(backend): needs `PATCH /projects/:projectId` — see backend-should-implement.md.
+export function useUpdateProject(): UseMutationResult<
+  Project,
+  Error,
+  { projectId: string; input: Parameters<typeof updateProject>[1] }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, input }) => updateProject(projectId, input),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(variables.projectId) });
+    },
+  });
+}
+
+// TODO(backend): needs `POST /game-objects/:goId/update` — see backend-should-implement.md.
+export function useUpdateGameObject(): UseMutationResult<
+  GameObject,
+  Error,
+  { projectId: string; gameObjectId: string; input: Parameters<typeof updateGameObject>[2] }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, gameObjectId, input }) => updateGameObject(projectId, gameObjectId, input),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gameObjects.tree(variables.projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gameObjects.list(variables.projectId) });
+    },
+  });
+}
+
+// TODO(backend): needs `POST /game-objects/:goId/move` — see backend-should-implement.md.
+export function useMoveGameObject(): UseMutationResult<
+  GameObject[],
+  Error,
+  { projectId: string; gameObjectId: string; parentId?: string | null; toIndex: number }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, gameObjectId, parentId, toIndex }) =>
+      moveGameObject(projectId, gameObjectId, { parentId, toIndex }),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gameObjects.tree(variables.projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gameObjects.list(variables.projectId) });
+    },
+  });
+}
+
+// TODO(backend): needs `POST /game-objects/:goId/pages` — see backend-should-implement.md.
+export function useCreatePage(): UseMutationResult<
+  Page,
+  Error,
+  { projectId: string; gameObjectId: string; title: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, gameObjectId, title }) => createPage(projectId, gameObjectId, { title }),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.gameObjects.pages(variables.projectId, variables.gameObjectId),
+      });
+    },
+  });
+}
+
+// TODO(backend): needs `POST /game-objects/:goId/pages/:pageId/update` — see backend-should-implement.md.
+export function useUpdatePage(): UseMutationResult<
+  Page,
+  Error,
+  { projectId: string; gameObjectId: string; pageId: string; title: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, gameObjectId, pageId, title }) =>
+      updatePage(projectId, gameObjectId, pageId, { title }),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.gameObjects.pages(variables.projectId, variables.gameObjectId),
+      });
+    },
+  });
+}
+
+// TODO(backend): needs `POST /game-objects/:goId/pages/:pageId/delete` — see backend-should-implement.md.
+export function useDeletePage(): UseMutationResult<
+  unknown,
+  Error,
+  { projectId: string; gameObjectId: string; pageId: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, gameObjectId, pageId }) => deletePage(projectId, gameObjectId, pageId),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.gameObjects.pages(variables.projectId, variables.gameObjectId),
+      });
+    },
+  });
+}
+
+// TODO(backend): needs `POST /game-objects/:goId/pages/:pageId/move` — see backend-should-implement.md.
+export function useMovePage(): UseMutationResult<
+  Page[],
+  Error,
+  { projectId: string; gameObjectId: string; pageId: string; toIndex: number }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, gameObjectId, pageId, toIndex }) =>
+      movePage(projectId, gameObjectId, pageId, toIndex),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.gameObjects.pages(variables.projectId, variables.gameObjectId),
+      });
+    },
   });
 }
 
