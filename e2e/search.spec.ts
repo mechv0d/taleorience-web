@@ -13,8 +13,8 @@ test("Ctrl+K opens the project search palette", async ({ page }) => {
   await expect(page.getByRole("dialog", { name: "Search project" })).toBeVisible();
 
   await page.getByLabel("Search query").fill("citadel");
-  // The seeded data has no text blocks, so the search yields no matches.
-  await expect(page.getByText(/No matches for/)).toBeVisible();
+  // GO names are matched client-side, so the seeded "Moonlight Citadel" shows up.
+  await expect(page.getByText("Moonlight Citadel")).toBeVisible();
 
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog", { name: "Search project" })).not.toBeVisible();

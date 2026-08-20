@@ -33,7 +33,8 @@ test("creating a project shows it in the list, then deleting removes it", async 
   await expect(card).toBeVisible();
 
   await card.hover();
-  await card.getByRole("button", { name: "Delete E2E Temp World" }).click();
+  await card.getByRole("button", { name: "Options for E2E Temp World" }).click();
+  await page.getByRole("menuitem", { name: "Delete" }).click();
   await page.getByRole("button", { name: "Delete", exact: true }).click();
 
   await expect(card).not.toBeVisible();
