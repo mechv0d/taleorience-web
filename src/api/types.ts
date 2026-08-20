@@ -108,14 +108,13 @@ interface BlockBase<T extends BlockType> {
   updatedAt: string;
 }
 
-export type Block<T extends BlockType = BlockType> = BlockBase<T> & {
-  data: BlockDataMap[T];
-};
+export type Block<T extends BlockType = BlockType> = T extends BlockType
+  ? BlockBase<T> & { data: BlockDataMap[T] }
+  : never;
 
-export type BlockInput<T extends BlockType = BlockType> = {
-  type: T;
-  data: BlockDataMap[T];
-};
+export type BlockInput<T extends BlockType = BlockType> = T extends BlockType
+  ? { type: T; data: BlockDataMap[T] }
+  : never;
 
 export interface Tag {
   id: string;
