@@ -72,3 +72,22 @@ export function childrenOf(nodes: readonly GameObject[], parentId: string | null
     .filter((n) => n.parentId === parentId)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
+
+/**
+ * Prune a tree to the nodes that satisfy `predicate`, keeping their ancestor
+ * chain. A node is kept when it (or any descendant) matches; non-matching
+ * subtrees of a matching node are dropped.
+ */
+export function filterTree(
+  nodes: readonly GameObjectTreeNode[],
+  predicate: (node: GameObjectTreeNode) => boolean,
+): GameObjectTreeNode[] {
+  const prune = (node: GameObjectTreeNode): GameObjectTreeNode | null => {
+    const children = node.children.map(prune).filter((n): n is GameObjectTreeNode => n !== null);
+    if (predicate(node) || children.length > 0) {
+      return { ...node, children };
+    }
+    return null;
+  };
+  return nodes.map(prune).filter((n): n is GameObjectTreeNode => n !== null);
+}
