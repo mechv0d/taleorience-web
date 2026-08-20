@@ -194,3 +194,59 @@
     outline: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Motion — tooltip / popover entrance and the Material-style ripple.
+ * ------------------------------------------------------------------------- */
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-tooltip-in {
+  animation: tooltip-in 120ms ease-out;
+}
+
+.animate-popover-in {
+  animation: popover-in 140ms ease-out;
+}
+
+/* Ripple surface: the element must be position-relative (or overflow hidden). */
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: currentColor;
+  opacity: 0.12;
+  transform: scale(0);
+  animation: ripple 480ms ease-out forwards;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}

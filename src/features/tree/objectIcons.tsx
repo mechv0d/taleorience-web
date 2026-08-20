@@ -1,6 +1,7 @@
-import { type ReactNode } from "react";
+import { type ComponentType, type ReactNode } from "react";
 
 import {
+  Box,
   Building2,
   Castle,
   CircleDot,
@@ -20,29 +21,63 @@ import {
   Users,
 } from "lucide-react";
 
-const RULES: Array<[RegExp, ReactNode]> = [
-  [/world|universe|realm|cosmos/i, <Castle className="h-4 w-4" />],
-  [/quest|adventure|mission/i, <Swords className="h-4 w-4" />],
-  [/city|town|village|settlement|port|harbor|gate/i, <Building2 className="h-4 w-4" />],
-  [/bazaar|market|shop|store|inn|tavern/i, <Store className="h-4 w-4" />],
-  [/house|home|residence|manor/i, <House className="h-4 w-4" />],
-  [/citadel|fortress|castle|keep|tower|stronghold/i, <TowerControl className="h-4 w-4" />],
-  [/temple|shrine|church|cathedral|monastery/i, <Landmark className="h-4 w-4" />],
-  [/mountain|peak|ridge|crag|cavern|cave/i, <Mountain className="h-4 w-4" />],
-  [/forest|grove|wood|tree/i, <TreePine className="h-4 w-4" />],
-  [/person|people|faction|guild|clan|npc|character|guard|priest|king|queen/i, <Users className="h-4 w-4" />],
-  [/scroll|journal|book|record|letter|document|prophecy/i, <ScrollText className="h-4 w-4" />],
-  [/artifact|relic|item|weapon|armor|gear/i, <Package className="h-4 w-4" />],
-  [/crown|royal|throne/i, <Crown className="h-4 w-4" />],
-  [/gem|jewel|crystal|ore/i, <Gem className="h-4 w-4" />],
-  [/potion|alchemy|magic|spell|ritual/i, <FlaskConical className="h-4 w-4" />],
-  [/region|area|district|land|island|continent/i, <MapPin className="h-4 w-4" />],
+import type { ObjectIconName } from "@/api/types";
+
+const ICON_MAP: Record<ObjectIconName, ComponentType<{ className?: string }>> = {
+  box: Box,
+  "building-2": Building2,
+  castle: Castle,
+  "circle-dot": CircleDot,
+  crown: Crown,
+  flask: FlaskConical,
+  gem: Gem,
+  house: House,
+  landmark: Landmark,
+  "map-pin": MapPin,
+  mountain: Mountain,
+  package: Package,
+  scroll: ScrollText,
+  store: Store,
+  swords: Swords,
+  tower: TowerControl,
+  "tree-pine": TreePine,
+  users: Users,
+};
+
+/** Render a preset icon by name (falls back to the default cube). */
+export function objectIconByName(name: ObjectIconName | string | null | undefined, size = "h-4 w-4"): ReactNode {
+  const Icon = ICON_MAP[name as ObjectIconName] ?? ICON_MAP.box;
+  return <Icon className={size} />;
+}
+
+const RULES: Array<[RegExp, ObjectIconName]> = [
+  [/world|universe|realm|cosmos/i, "castle"],
+  [/quest|adventure|mission/i, "swords"],
+  [/city|town|village|settlement|port|harbor|gate/i, "building-2"],
+  [/bazaar|market|shop|store|inn|tavern/i, "store"],
+  [/house|home|residence|manor/i, "house"],
+  [/citadel|fortress|castle|keep|tower|stronghold/i, "tower"],
+  [/temple|shrine|church|cathedral|monastery/i, "landmark"],
+  [/mountain|peak|ridge|crag|cavern|cave/i, "mountain"],
+  [/forest|grove|wood|tree/i, "tree-pine"],
+  [/person|people|faction|guild|clan|npc|character|guard|priest|king|queen/i, "users"],
+  [/scroll|journal|book|record|letter|document|prophecy/i, "scroll"],
+  [/artifact|relic|item|weapon|armor|gear/i, "package"],
+  [/crown|royal|throne/i, "crown"],
+  [/gem|jewel|crystal|ore/i, "gem"],
+  [/potion|alchemy|magic|spell|ritual/i, "flask"],
+  [/region|area|district|land|island|continent/i, "map-pin"],
 ];
 
-/** Best-effort icon for a GameObject based on its name (spec §5 requires distinct icons). */
-export function objectIcon(name: string): ReactNode {
+/** Best-effort preset for a GameObject based on its name (spec §5 requires distinct icons). */
+export function inferObjectIcon(name: string): ObjectIconName {
   for (const [pattern, icon] of RULES) {
     if (pattern.test(name)) return icon;
   }
-  return <CircleDot className="h-4 w-4" />;
+  return "box";
+}
+
+/** Icon for a GO: explicit preset when set (e.g. from the picker), otherwise name-based. */
+export function objectIcon(name: string, icon?: string | null): ReactNode {
+  return objectIconByName(icon ?? inferObjectIcon(name));
 }

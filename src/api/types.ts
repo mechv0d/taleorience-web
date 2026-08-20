@@ -14,12 +14,38 @@ export interface Project {
   updatedAt: string;
 }
 
+/** Icon presets selectable in the GO icon picker. Mapped in features/tree/objectIcons. */
+export const OBJECT_ICONS = [
+  "box",
+  "castle",
+  "circle-dot",
+  "crown",
+  "flask",
+  "gem",
+  "house",
+  "landmark",
+  "map-pin",
+  "mountain",
+  "package",
+  "scroll",
+  "store",
+  "swords",
+  "tower",
+  "tree-pine",
+  "users",
+  "building-2",
+] as const;
+
+export type ObjectIconName = (typeof OBJECT_ICONS)[number];
+
 export interface GameObject {
   id: string;
   projectId: string;
   parentId: string | null;
   name: string;
   icon: string | null;
+  // TODO(backend): GameObject is expected to gain `bannerAssetId` alongside the icon.
+  bannerAssetId?: string | null;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;

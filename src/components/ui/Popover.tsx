@@ -66,7 +66,7 @@ export function Popover({
           role={label ? "menu" : undefined}
           aria-label={label}
           className={cn(
-            "absolute top-full z-40 mt-1 min-w-48 overflow-hidden rounded-large border border-border bg-page shadow-popover",
+            "absolute top-full z-40 mt-1 min-w-48 overflow-hidden rounded-large border border-border bg-page shadow-popover animate-popover-in",
             align === "end" ? "right-0" : "left-0",
             panelClassName,
           )}
