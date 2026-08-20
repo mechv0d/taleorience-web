@@ -186,6 +186,12 @@ function TableEditor({ projectId, block }: TableBlockEditorProps) {
     save({ headers: block.data.headers, rows: next });
   };
 
+  const addColumn = () => {
+    const next = rows.length === 0 ? [[""]] : rows.map((r) => [...r, ""]);
+    setRows(next);
+    save({ headers: block.data.headers, rows: next });
+  };
+
   return (
     <div className="rounded-small border border-border-subtle p-3">
       <table className="w-full border-collapse" data-testid="table-editor">
@@ -222,6 +228,13 @@ function TableEditor({ projectId, block }: TableBlockEditorProps) {
         className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
       >
         <Plus className="h-3.5 w-3.5" /> Add row
+      </button>
+      <button
+        onClick={addColumn}
+        data-testid="table-add-column"
+        className="mt-2 ml-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+      >
+        <Plus className="h-3.5 w-3.5" /> Add column
       </button>
     </div>
   );

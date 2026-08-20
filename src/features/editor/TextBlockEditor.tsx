@@ -5,8 +5,10 @@ import type { Editor } from "@tiptap/core";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
   Bold,
-  Italic,
+  Heading1,
   Heading2,
+  Heading3,
+  Italic,
   List,
   ListOrdered,
   Link as LinkIcon,
@@ -125,7 +127,7 @@ const insertWikiLink = useCallback(
     editorProps: {
       attributes: {
         class:
-          "prose-editor min-h-[3rem] rounded-small border border-border-subtle bg-page px-3 py-2 text-[15px] leading-[1.7] text-text outline-none focus:border-primary focus:ring-2 focus:ring-focus/30",
+          "prose-editor min-h-[3rem] bg-page px-3 py-2 text-[15px] leading-[1.7] text-text outline-none",
       },
       handleKeyDown: (_view, event) => {
         const { suggest: current, results: currentResults } = stateRef.current;
@@ -188,7 +190,9 @@ const insertWikiLink = useCallback(
         <FormatButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} label="Italic" icon={<Italic className="h-3.5 w-3.5" />} />
         <FormatButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} label="Underline" icon={<UnderlineIcon className="h-3.5 w-3.5" />} />
         <span className="mx-1 h-4 w-px bg-border" />
-        <FormatButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} label="Heading" icon={<Heading2 className="h-3.5 w-3.5" />} />
+        <FormatButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} label="Heading 1" icon={<Heading1 className="h-3.5 w-3.5" />} />
+        <FormatButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} label="Heading 2" icon={<Heading2 className="h-3.5 w-3.5" />} />
+        <FormatButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} label="Heading 3" icon={<Heading3 className="h-3.5 w-3.5" />} />
         <FormatButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} label="Bullet list" icon={<List className="h-3.5 w-3.5" />} />
         <FormatButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} label="Numbered list" icon={<ListOrdered className="h-3.5 w-3.5" />} />
         <FormatButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} label="Quote" icon={<Quote className="h-3.5 w-3.5" />} />
