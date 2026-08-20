@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { buildTree, collectDescendantIds, flattenTree, ancestorPath, childrenOf, findNode } from "./tree";
+import {
+  buildTree,
+  collectDescendantIds,
+  flattenTree,
+  ancestorPath,
+  childrenOf,
+  findNode,
+  buildDraftTree,
+  computeMove,
+  emptyDraft,
+  parentKeyOf,
+} from "./tree";
 import type { GameObject } from "@/api/types";
 
 function go(partial: Partial<GameObject>): GameObject {
@@ -92,5 +103,74 @@ describe("childrenOf", () => {
     ];
     expect(childrenOf(flat, "root").map((n) => n.id)).toEqual(["a", "b"]);
     expect(childrenOf(flat, null).map((n) => n.id)).toEqual(["orphan"]);
+  });
+});
+
+describe("buildDraftTree", () => {
+  const tree = buildTree([
+    go({ id: "root", sortOrder: 0 }),
+    go({ id: "b", parentId: "root", sortOrder: 1 }),
+    go({ id: "a", parentId: "root", sortOrder: 0 }),
+    go({ id: "a1", parentId: "a", sortOrder: 0 }),
+  ]);
+
+  it("applies a child-order override for a parent", () => {
+    const draft = { ...emptyDraft(), order: { [parentKeyOf("root")]: ["b", "a"] } };
+    expect(buildDraftTree(tree, draft)[0].children.map((n) => n.id)).toEqual(["b", "a"]);
+  });
+
+  it("reparents a node through parentOf", () => {
+    const draft = { ...emptyDraft(), parentOf: { a1: "root" } };
+    const rebuilt = buildDraftTree(tree, draft);
+    const root = rebuilt.find((n) => n.id === "root")!;
+    expect(root.children.map((n) => n.id)).toContain("a1");
+    expect(root.children.find((n) => n.id === "a")!.children.map((n) => n.id)).not.toContain("a1");
+  });
+
+  it("returns the server tree when the draft is empty", () => {
+    expect(flattenTree(buildDraftTree(tree, emptyDraft())).map((n) => n.id)).toEqual([
+      "root",
+      "a",
+      "a1",
+      "b",
+    ]);
+  });
+});
+
+describe("computeMove", () => {
+  const tree = buildTree([
+    go({ id: "root", sortOrder: 0 }),
+    go({ id: "b", parentId: "root", sortOrder: 1 }),
+    go({ id: "a", parentId: "root", sortOrder: 0 }),
+    go({ id: "a1", parentId: "a", sortOrder: 0 }),
+    go({ id: "c", parentId: "root", sortOrder: 2 }),
+  ]);
+
+  it("drops a node inside a target (appends as child)", () => {
+    const flat = flattenTree(tree);
+    const move = computeMove(flat, "b", "a", "inside");
+    expect(move.parentId).toBe("a");
+    expect(move.order).toEqual(["a1", "b"]);
+  });
+
+  it("reorders before a sibling", () => {
+    const flat = flattenTree(tree);
+    const move = computeMove(flat, "c", "a", "before");
+    expect(move.parentId).toBe("root");
+    expect(move.order).toEqual(["c", "a", "b"]);
+  });
+
+  it("reorders after a sibling", () => {
+    const flat = flattenTree(tree);
+    const move = computeMove(flat, "a", "b", "after");
+    expect(move.parentId).toBe("root");
+    expect(move.order).toEqual(["b", "a", "c"]);
+  });
+
+  it("pulls a child out to its parent's level (after the target)", () => {
+    const flat = flattenTree(tree);
+    const move = computeMove(flat, "a1", "a", "after");
+    expect(move.parentId).toBe("root");
+    expect(move.order).toEqual(["a", "a1", "b", "c"]);
   });
 });
