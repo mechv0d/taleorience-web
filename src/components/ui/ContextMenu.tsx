@@ -68,7 +68,7 @@ function MenuPanel({ items, x, y, onItemSelect, openSubmenu, onEnterSubmenu }: M
     <div
       ref={ref}
       role="menu"
-      className="fixed z-50 min-w-56 rounded-large border border-border bg-page py-1 shadow-popover"
+      className="fixed z-50 min-w-56 rounded-large border border-border bg-page py-1 shadow-popover animate-popover-in"
       style={{ left: x, top: y }}
       onContextMenu={(e) => e.preventDefault()}
     >
