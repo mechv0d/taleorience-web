@@ -1,4 +1,5 @@
-import { APIRequestContext, request } from "@playwright/test";
+import { request } from "@playwright/test";
+import type { APIRequestContext } from "@playwright/test";
 
 const API = "http://localhost:4000";
 const PROJECTS_PATH = "/api/v1/projects";
