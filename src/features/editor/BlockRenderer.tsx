@@ -1,6 +1,7 @@
 import { apiUrl } from "@/api/client";
 import { cn } from "@/lib/cn";
 import type { Block } from "@/api/types";
+import { MarkdownView } from "./MarkdownView";
 
 /** Read-only renderer for every block type (edit mode arrives in feature/editor). */
 export function BlockRenderer({ block }: { block: Block }) {
@@ -25,10 +26,7 @@ export function BlockRenderer({ block }: { block: Block }) {
 }
 
 function TextBlock({ content }: { content: string }) {
-  if (!content.trim()) return <p className="leading-relaxed">&nbsp;</p>;
-  return (
-    <p className="whitespace-pre-wrap text-[16px] leading-[1.7] text-text">{content}</p>
-  );
+  return <MarkdownView content={content} />;
 }
 
 function ImageBlock({
